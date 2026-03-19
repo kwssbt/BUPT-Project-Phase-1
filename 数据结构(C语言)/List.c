@@ -1,10 +1,11 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<stdbool.h>
 
 typedef int T;
-typedef int siz_t;
 typedef struct NODE Node;
 typedef struct LIST List;
+
 void print_T(T val){
     printf("%d",val);
 }
@@ -14,27 +15,8 @@ struct NODE{
     Node*pre;
     Node*nex;
 };
-struct LIST{
-    Node*dummy_head;
-    Node*dummy_tail;
-    siz_t _size;
-    siz_t(*size)(List*self);
-    T(*back)(List*self);
-    T(*front)(List*self);
-    void(*push_back)(List*self,T val);
-    void(*push_front)(List*self,T val);
-    void(*pop_back)(List*self);
-    void(*pop_front)(List*self);
-    void(*print)(List*self);
-    void(*clear)(List*self);
-    Node*(*find)(List*self,T key);
-    void(*push_x_back)(List*self,T val,T key);
-    void(*push_x_front)(List*self,T val,T key);
-    void(*delete)(List*self,T key);
-    void(*destroy)(List*self);
-};
 
-Node*creat_Node(int val){
+Node*creat_Node(T val){
     Node*node=(Node*)malloc(sizeof(Node));
     if(node==NULL){
         return NULL;
@@ -44,14 +26,52 @@ Node*creat_Node(int val){
     node->nex=NULL;
     return node;
 }
-siz_t My_size(List*self){
+
+struct LIST{
+    Node*dummy_head;
+    Node*dummy_tail;
+    int _size;
+
+    int(*size)(List*self);
+    bool*(*empty)(List*self);
+    T(*back)(List*self);
+    T(*front)(List*self);
+    Node*(*find)(List*self,T key);
+
+    void(*push_back)(List*self,T val);
+    void(*push_front)(List*self,T val);
+    void(*push_p_back)(List*self,T val,T key);
+    void(*push_p_front)(List*self,T val,T key);
+
+    void(*pop_back)(List*self);
+    void(*pop_front)(List*self);
+    void(*delete)(List*self,T key);
+
+    void(*clear)(List*self);
+    void(*destroy)(List*self);
+};
+
+int My_size(List*self){
     return self->_size;
+}
+bool My_empty(List*self){
+    return self->_size==0;
 }
 T My_back(List*self){
     return self->dummy_tail->pre->val;
 }
 T My_front(List*self){
     return self->dummy_head->nex->val;
+}
+Node*My_find(List*self,T key){
+    Node*p=self->dummy_head->nex;
+    while(p!=self->dummy_tail){
+        if(p->val==key){
+            return p;
+        }
+        p=p->nex;
+    }
+    return NULL;
 }
 void My_push_back(List*self,T val){
     Node*node=creat_Node(val);
@@ -75,6 +95,33 @@ void My_push_front(List*self,int val){
     self->dummy_head->nex->pre=node;
     self->dummy_head->nex=node;
 }
+void My_push_p_back(List*self,T val,T key){
+    Node*p=self->find(self,key);
+    if(p==NULL){
+        My_push_back(self,val);
+        return;
+    }
+    self->_size++;
+    Node*node=creat_Node(val);
+    node->pre=p;
+    node->nex=p->nex;
+    p->nex->pre=node;
+    p->nex=node;
+}
+void My_push_p_front(List*self,T val,T key){
+    Node*p=self->find(self,key);
+    if(p==NULL){
+        My_push_back(self,val);
+        return;
+    }
+    self->_size++;
+    Node*node=creat_Node(val);
+    node->nex=p;
+    node->pre=p->pre;
+    p->pre->nex=node;
+    p->pre=node;
+
+}
 void My_pop_back(List*self){
     if(self->_size==0){
         return;
@@ -95,15 +142,15 @@ void My_pop_front(List*self){
     self->dummy_head->nex=p->nex;
     free(p);
 }
-void My_print(List*self){
-    printf("List: ");
-    Node*p=self->dummy_head->nex;
-    while(p!=self->dummy_tail){
-        print_T(p->val);
-        printf(" <-> ");
-        p=p->nex;
+void My_delete(List*self,T key){
+    Node*p=self->find(self,key);
+    if(p==NULL){
+        return;
     }
-    printf("NULL\n");
+    self->_size--;
+    p->pre->nex=p->nex;
+    p->nex->pre=p->pre;
+    free(p);
 }
 void My_clear(List*self){
     Node*p=self->dummy_head->nex;
@@ -114,53 +161,6 @@ void My_clear(List*self){
     self->dummy_head->nex=self->dummy_tail;
     self->dummy_tail->pre=self->dummy_head;
     self->_size=0;
-}
-Node*My_find(List*self,T key){
-    Node*p=self->dummy_head->nex;
-    while(p!=self->dummy_tail){
-        if(p->val==key){
-            return p;
-        }
-        p=p->nex;
-    }
-    return NULL;
-}
-void My_push_x_back(List*self,T val,T key){
-    Node*p=self->find(self,key);
-    if(p==NULL){
-        My_push_back(self,val);
-        return;
-    }
-    self->_size++;
-    Node*node=creat_Node(val);
-    node->pre=p;
-    node->nex=p->nex;
-    p->nex->pre=node;
-    p->nex=node;
-}
-void My_push_x_front(List*self,T val,T key){
-    Node*p=self->find(self,key);
-    if(p==NULL){
-        My_push_front(self,val);
-        return;
-    }
-    self->_size++;
-    Node*node=creat_Node(val);
-    node->nex=p;
-    node->pre=p->pre;
-    p->pre->nex=node;
-    p->pre=node;
-
-}
-void My_delete(List*self,T key){
-    Node*p=self->find(self,key);
-    if(p==NULL){
-        return;
-    }
-    self->_size--;
-    p->pre->nex=p->nex;
-    p->nex->pre=p->pre;
-    free(p);
 }
 void My_destroy(List*self){
     if(self==NULL){
@@ -184,31 +184,36 @@ List*creat_List(){
     if(list->dummy_tail==NULL){
         return NULL;
     }
-    list->_size=0;
+
     list->dummy_head->nex=list->dummy_tail;
     list->dummy_head->pre=NULL;
     list->dummy_tail->pre=list->dummy_head;
     list->dummy_tail->nex=NULL;
+    list->_size=0;
+
     list->size=My_size;
+    list->empty=My_empty;
     list->back=My_back;
     list->front=My_front;
+    list->find=My_find;
+
     list->push_back=My_push_back;
     list->push_front=My_push_front;
+    list->push_p_back=My_push_p_back;
+    list->push_p_front=My_push_p_front;
+
     list->pop_back=My_pop_back;
     list->pop_front=My_pop_front;
-    list->print=My_print;
-    list->clear=My_clear;
-    list->find=My_find;
-    list->push_x_back=My_push_x_back;
-    list->push_x_front=My_push_x_front;
     list->delete=My_delete;
+
+    list->clear=My_clear;    
     list->destroy=My_destroy;
+
     return list;
 }
-
-
 
 int main(void){
     List*list=creat_List();
     
+    list->destroy(list);
 }
