@@ -4,7 +4,7 @@
 int main(){
   int N;
   scanf("%d",&N);
-  int q[100005];
+  int q[1000005];
   int f=0,r=0;
   for(int i=0;i<N;++i){
     int id;
